@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Digital Product Builder (AI)</title>
+<style>
+  body{font-family:Arial;background:#f6f6f6;padding:20px}
+  .container{max-width:900px;margin:auto;background:#fff;padding:25px;border-radius:12px;box-shadow:0 0 15px rgba(0,0,0,0.08)}
+  label{display:block;font-weight:700;margin-top:10px}
+  input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid:#ccc;margin-bottom:12px}
+  .btn{background:#4c6ef5;color:#fff;padding:12px;border-radius:10px;border:none;width:100%;cursor:pointer}
+  .preview{margin-top:20px;background:#f1f3f5;padding:16px;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Digital Product Builder (AI)</h1>
+
+  <label>Kategori</label>
+  <select id="category">
+    <option>Bisnis</option>
+    <option>Self-Improvement</option>
+    <option>Konten Creator</option>
+    <option>Finance</option>
+  </select>
+
+  <label>Instruksi singkat</label>
+  <input id="instruksi" placeholder="contoh: untuk pemula, bahasa santai">
+
+  <button class="btn" onclick="generateAI()">Generate Produk Otomatis</button>
+
+  <div id="loading" style="display:none;margin-top:12px">Sedang generate... ⏳</div>
+
+  <div class="preview" id="preview" style="display:none">
+    <h3 id="outTitle"></h3>
+    <p id="outDesc"></p>
+    <pre id="outFull" style="white-space:pre-wrap"></pre>
+    <button class="btn" onclick="downloadTxt()">Download (.txt)</button>
+  </div>
+</div>
+
+<script>
+async function generateAI(){
+  const category = document.getElementById('category').value;
+  const instruksi = document.getElementById('instruksi').value || '';
+  const prompt = `Buatkan produk digital lengkap (judul, deskripsi, outline) untuk kategori: ${category}. Instruksi: ${instruksi}.`;
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('preview').style.display = 'none';
+
+  try {
+    const res = await fetch('/.netlify/functions/groq-proxy', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    const text = data.result || 'Error';
+
+    const lines = text.trim().split(/\n/);
+    document.getElementById('outTitle').innerText = lines[0] || 'Produk AI';
+    document.getElementById('outDesc').innerText = lines.slice(1,4).join(' ');
+    document.getElementById('outFull').innerText = text;
+
+    document.getElementById('preview').style.display = 'block';
+  } catch(err){
+    alert('Gagal generate: ' + err.message);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function downloadTxt(){
+  const title = document.getElementById('outTitle').innerText || 'produk-ai';
+  const content = document.getElementById('outFull').innerText;
+  const blob = new Blob([content], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = title.replace(/\s+/g,'_') + '.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
