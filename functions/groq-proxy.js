@@ -1,9 +1,10 @@
-
-
 exports.handler = async (event) => {
   try {
     if (event.httpMethod !== 'POST') {
-      return { statusCode: 405, body: 'Method Not Allowed' };
+      return {
+        statusCode: 405,
+        body: 'Method Not Allowed'
+      };
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -11,7 +12,10 @@ exports.handler = async (event) => {
 
     const GROQ_KEY = process.env.GROQ_API_KEY;
     if (!GROQ_KEY) {
-      return { statusCode: 500, body: 'Missing GROQ_API_KEY' };
+      return {
+        statusCode: 500,
+        body: 'GROQ_API_KEY belum diisi di Netlify'
+      };
     }
 
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -31,17 +35,19 @@ exports.handler = async (event) => {
     });
 
     const data = await res.json();
-    const reply = data?.choices?.[0]?.message?.content || 'Error generating response';
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ result: reply })
+      body: JSON.stringify({
+        result: data.choices?.[0]?.message?.content || 'Tidak ada hasil'
+      })
     };
 
-  } catch (err) {
+  } catch (error) {
     return {
       statusCode: 500,
-      body: err.toString()
+      body: error.toString()
     };
   }
 };
+        
